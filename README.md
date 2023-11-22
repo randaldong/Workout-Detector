@@ -26,10 +26,10 @@ The exercise pose detection part of the music recommendation project.
 
 ## Pose Detection
 
+- Idle
 - Bicep Curl 
 - Shoulder Press
 - Squat
-- Idle
 
 
 
@@ -45,3 +45,4 @@ The exercise pose detection part of the music recommendation project.
 
 - [MediaPipe](https://developers.google.com/mediapipe): An open source, cross-platform, customizable ML solution for live and streaming media.
 - [chrisprasanna](https://github.com/chrisprasanna)'s GitHub repository [Exercise_Recognition_AI](https://github.com/chrisprasanna/Exercise_Recognition_AI)
+

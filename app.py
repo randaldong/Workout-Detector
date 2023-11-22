@@ -1,3 +1,18 @@
+#######################################################################################################################
+# Main application of the exercise pose detetion.
+
+# Support four kinds of poses:
+# 1. Idle
+# 2. Bicep Curl 
+# 3. Shoulder Press
+# 4. Squat
+#
+# Initial pose is "Idle". As soon as a new movement is detected as
+# a "valid" pose (satisfying the constraints of the three other
+# exercise poses), the current pose will be switched.
+#######################################################################################################################
+
+# Import Modules ======================================================================================================
 import streamlit as st
 import cv2
 
@@ -11,7 +26,7 @@ import math
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 import av
 
-## Build and Load Model
+# Build and Load Model ================================================================================================
 def attention_block(inputs, time_steps):
     """
     Attention layer for deep neural network
@@ -30,11 +45,12 @@ def attention_block(inputs, time_steps):
     return output_attention_mul
 
 # @st.cache(allow_output_mutation=True)
+# ---------------------------------------------------------------------------------------------------------------------
 # st.cache was deprecated in version 1.18.0, use st.cache_data or st.cache_resource instead
 # st.cache_data is the recommended way to cache computations that return data
 # st.cache_resource is the recommended way to cache global resources like ML models or database connections
 # refer to https://docs.streamlit.io/library/advanced-features/caching for more details
-
+# ---------------------------------------------------------------------------------------------------------------------
 @st.cache_resource(show_spinner="Building Model...")  # 👈 Add the caching decorator using custom text for spinner
 def build_model(HIDDEN_UNITS=256, sequence_length=30, num_input_values=33*4, num_classes=3):
     """
@@ -73,15 +89,9 @@ def build_model(HIDDEN_UNITS=256, sequence_length=30, num_input_values=33*4, num
 HIDDEN_UNITS = 256
 model = build_model(HIDDEN_UNITS)
 
-## App
+# App =================================================================================================================
+## UI -----------------------------------------------------------------------------------------------------------------
 st.write("# Exercise Detector 🏋️‍♂️🕵️")
-
-# st.markdown("❗❗ **Development Note** ❗❗")
-# st.markdown("Currently, the exercise recognition model uses the the x, y, and z coordinates of each anatomical landmark from the MediaPipe Pose model. These coordinates are normalized with respect to the image frame (e.g., the top left corner represents (x=0,y=0) and the bottom right corner represents(x=1,y=1)).")
-# st.markdown("I'm currently developing and testing two new feature engineering strategies:")
-# st.markdown("- Normalizing coordinates by the detected bounding box of the user")
-# st.markdown("- Using joint angles rather than keypoint coordaintes as features")            
-# st.write("Stay Tuned!")
 
 st.write("## Settings⚙️")
 threshold1 = st.slider("Minimum Keypoint Detection Confidence", 0.00, 1.00, 0.50)
@@ -90,12 +100,12 @@ threshold3 = st.slider("Minimum Activity Classification Confidence", 0.00, 1.00,
 
 st.write("## Launch 🚀")
 
-## Mediapipe
+## Mediapipe ----------------------------------------------------------------------------------------------------------
 mp_pose = mp.solutions.pose # Pre-trained pose estimation model from Google Mediapipe
 mp_drawing = mp.solutions.drawing_utils # Supported Mediapipe visualization tools
 pose = mp_pose.Pose(min_detection_confidence=threshold1, min_tracking_confidence=threshold2) # mediapipe pose model
 
-## Real Time Machine Learning and Computer Vision Processes
+## Real Time Machine Learning and Computer Vision Processes -----------------------------------------------------------
 class VideoProcessor:
     def __init__(self):
         # Parameters
@@ -116,8 +126,7 @@ class VideoProcessor:
         self.press_stage = None
         self.squat_stage = None
     
-    # @st.cache()    
-    # @st.cache_resource(show_spinner="Drawing Landmarks...")  # 👈 Add the caching decorator using custom text for spinner
+    
     def draw_landmarks(self, image, results):
         """
         This function draws keypoints and landmarks detected by the human pose estimation model
@@ -129,8 +138,7 @@ class VideoProcessor:
                                     )
         return
     
-    # @st.cache()
-    # @st.cache_resource(show_spinner="Extracting Keypoints...")  # 👈 Add the caching decorator using custom text for spinner
+    
     def extract_keypoints(self, results):
         """
         Processes and organizes the keypoints detected from the pose estimation model 
@@ -140,8 +148,7 @@ class VideoProcessor:
         pose = np.array([[res.x, res.y, res.z, res.visibility] for res in results.pose_landmarks.landmark]).flatten() if results.pose_landmarks else np.zeros(33*4)
         return pose
     
-    # @st.cache()
-    # @st.cache_resource(show_spinner="Calculating Angle...")  # 👈 Add the caching decorator using custom text for spinner
+    
     def calculate_angle(self, a,b,c):
         """
         Computes 3D joint angle inferred by 3 keypoints and their relative positions to one another
@@ -159,8 +166,7 @@ class VideoProcessor:
             
         return angle 
     
-    # @st.cache()
-    # @st.cache_resource(show_spinner="Getting Coordinates...")  # 👈 Add the caching decorator using custom text for spinner
+    
     def get_coordinates(self, landmarks, mp_pose, side, joint):
         """
         Retrieves x and y coordinates of a particular keypoint from the pose estimation model
@@ -177,8 +183,7 @@ class VideoProcessor:
         y_coord_val = landmarks[coord.value].y
         return [x_coord_val, y_coord_val] 
     
-    # @st.cache()
-    # @st.cache_resource(show_spinner="Visualizing Joint Angle...")  # 👈 Add the caching decorator using custom text for spinner
+    
     def viz_joint_angle(self, image, angle, joint):
         """
         Displays the joint angle value near the joint within the image frame
@@ -190,8 +195,7 @@ class VideoProcessor:
                             )
         return
     
-    # @st.cache()
-    # @st.cache_resource(show_spinner="Counting Repetitions...")  # 👈 Add the caching decorator using custom text for spinner
+    
     def count_reps(self, image, landmarks, mp_pose):
         """
         Counts repetitions of each exercise. Global count and stage (i.e., state) variables are updated within this function.
@@ -283,8 +287,7 @@ class VideoProcessor:
             pass
         return
     
-    # @st.cache()
-    # @st.cache_resource(show_spinner="Visualizing Probability...")  # 👈 Add the caching decorator using custom text for spinner
+    
     def prob_viz(self, res, input_frame):
         """
         This function displays the model prediction probability distribution over the set of exercise classes
@@ -298,8 +301,7 @@ class VideoProcessor:
             
         return output_frame
     
-    # @st.cache()
-    # @st.cache_resource(show_spinner="Processing Video Frames...")  # 👈 Add the caching decorator using custom text for spinner
+    
     def process(self, image):
         """
         Function to process the video frame from the user's webcam and run the fitness trainer AI
@@ -327,9 +329,6 @@ class VideoProcessor:
         
         if len(self.sequence) == self.sequence_length:
             res = model.predict(np.expand_dims(self.sequence, axis=0), verbose=0)[0]
-            # interpreter.set_tensor(self.input_details[0]['index'], np.expand_dims(self.sequence, axis=0))
-            # interpreter.invoke()
-            # res = interpreter.get_tensor(self.output_details[0]['index'])
             
             self.current_action = self.actions[np.argmax(res)]
             confidence = np.max(res)
@@ -371,7 +370,7 @@ class VideoProcessor:
         img = self.process(img)
         return av.VideoFrame.from_ndarray(img, format="bgr24")
         
-## Stream Webcam Video and Run Model
+## Stream Webcam Video and Run Model ----------------------------------------------------------------------------------
 # Options
 RTC_CONFIGURATION = RTCConfiguration(
     {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
