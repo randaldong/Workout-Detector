@@ -2,14 +2,11 @@
 # Main application of the exercise pose detetion.
 
 # Support four kinds of poses:
-# 1. Idle
+# 1. Idle or wrong (inclluding stretch)
 # 2. Bicep Curl 
 # 3. Shoulder Press
 # 4. Squat
-#
-# Initial pose is "Idle". As soon as a new movement is detected as
-# a "valid" pose (satisfying the constraints of the three other
-# exercise poses), the current pose will be switched.
+
 #######################################################################################################################
 
 # Import Modules ======================================================================================================
@@ -52,7 +49,7 @@ def attention_block(inputs, time_steps):
 # refer to https://docs.streamlit.io/library/advanced-features/caching for more details
 # ---------------------------------------------------------------------------------------------------------------------
 @st.cache_resource(show_spinner="Building Model...")  # 👈 Add the caching decorator using custom text for spinner
-def build_model(HIDDEN_UNITS=256, sequence_length=30, num_input_values=33*4, num_classes=3):
+def build_model(HIDDEN_UNITS=256, sequence_length=30, num_input_values=33*4, num_classes=4):
     """
     Function used to build the deep neural network model on startup
 
@@ -60,7 +57,7 @@ def build_model(HIDDEN_UNITS=256, sequence_length=30, num_input_values=33*4, num
         HIDDEN_UNITS (int, optional): Number of hidden units for each neural network hidden layer. Defaults to 256.
         sequence_length (int, optional): Input sequence length (i.e., number of frames). Defaults to 30.
         num_input_values (_type_, optional): Input size of the neural network model. Defaults to 33*4 (i.e., number of keypoints x number of metrics).
-        num_classes (int, optional): Number of classification categories (i.e., model output size). Defaults to 3.
+        num_classes (int, optional): Number of classification categories (i.e., model output size). Defaults to 4.
 
     Returns:
         keras model: neural network with pre-trained weights
@@ -94,9 +91,9 @@ model = build_model(HIDDEN_UNITS)
 st.write("# Exercise Detector 🏋️‍♂️🕵️")
 
 st.write("## Settings⚙️")
-threshold1 = st.slider("Minimum Keypoint Detection Confidence", 0.00, 1.00, 0.50)
-threshold2 = st.slider("Minimum Tracking Confidence", 0.00, 1.00, 0.50)
-threshold3 = st.slider("Minimum Activity Classification Confidence", 0.00, 1.00, 0.50)
+threshold1 = st.slider("Minimum Keypoint Detection Confidence", 0.00, 1.00, 0.80)
+threshold2 = st.slider("Minimum Tracking Confidence", 0.00, 1.00, 0.80)
+threshold3 = st.slider("Minimum Activity Classification Confidence", 0.00, 1.00, 0.80)
 
 st.write("## Launch 🚀")
 
@@ -109,9 +106,9 @@ pose = mp_pose.Pose(min_detection_confidence=threshold1, min_tracking_confidence
 class VideoProcessor:
     def __init__(self):
         # Parameters
-        self.actions = np.array(['curl', 'press', 'squat'])
+        self.actions = np.array(['curl', 'press', 'squat', 'idle or wrong'])
         self.sequence_length = 30
-        self.colors = [(240,160,80), (200,80,90), (80,180,240)]
+        self.colors = [(240,160,80), (200,80,90), (80,180,240), (0,0,0)]
         self.threshold = threshold3
         
         # Detection variables
@@ -192,7 +189,7 @@ class VideoProcessor:
         cv2.putText(image, str(int(angle)), 
                     tuple(np.multiply(joint, [640, 480]).astype(int)), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2, cv2.LINE_AA
-                            )
+                    )
         return
     
     
@@ -296,7 +293,14 @@ class VideoProcessor:
         """
         output_frame = input_frame.copy()
         for num, prob in enumerate(res):        
-            cv2.rectangle(output_frame, (0,60+num*40), (int(prob*100), 90+num*40), self.colors[num], -1)
+            # rectangle
+            if num == 3:
+                # idle or wrong
+                cv2.rectangle(output_frame, (0,60+num*40), (int(prob*220), 95+num*40), self.colors[num], -1)
+            else:
+                # one of the three exercises
+                cv2.rectangle(output_frame, (0,60+num*40), (int(prob*100), 95+num*40), self.colors[num], -1)
+            # text
             cv2.putText(output_frame, self.actions[num], (0, 85+num*40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)
             
         return output_frame
@@ -350,9 +354,12 @@ class VideoProcessor:
 
             # Display graphical information
             cv2.rectangle(image, (0,0), (640, 40), self.colors[np.argmax(res)], -1)
-            cv2.putText(image, 'curl ' + str(self.curl_counter), (3,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-            cv2.putText(image, 'press ' + str(self.press_counter), (240,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-            cv2.putText(image, 'squat ' + str(self.squat_counter), (490,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            if self.current_action == 'idle or wrong':
+                cv2.putText(image, 'idle, stretch, or wrong move', (80,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            else:
+                cv2.putText(image, 'curl ' + str(self.curl_counter), (3,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.putText(image, 'press ' + str(self.press_counter), (230,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                cv2.putText(image, 'squat ' + str(self.squat_counter), (490,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         # return cv2.flip(image, 1)
         return image
     

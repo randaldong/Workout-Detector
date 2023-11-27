@@ -26,10 +26,10 @@ The exercise pose detection part of the music recommendation project.
 
 ## Pose Detection
 
-- Idle
 - Bicep Curl 
 - Shoulder Press
 - Squat
+- Idle or wrong
 
 
 
@@ -40,6 +40,16 @@ The exercise pose detection part of the music recommendation project.
 1. recommend different types of songs when doing different workouts
 2. change song when switch exercise poses
 3. sound effect & counting for each movement
+
+## Model Training
+
+You can go through `ExerciseDecoder.ipynb` to checkout how the data is collected and how the model is trained. You can also collect customized data and train your own model using this Jupyter Notebook.
+
+
+
+retrained the model and increased the accuracy for four types.
+
+previously was using default model for just three types (curl, press, squat), regarding detection with low-confidence as idle. Recorded and labeled new videos last night and trained the model.
 
 ## References
 
