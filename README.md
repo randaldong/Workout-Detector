@@ -22,6 +22,10 @@ To install this project, do the following:
   ```bash
   sudo wget http://repo.continuum.io/miniconda/Miniconda3-py39_4.9.2-Linux-aarch64.sh
   sudo /bin/bash Miniconda3-py39_4.9.2-Linux-aarch64.sh
+  
+  # If conda is installed under root,
+  # to run conda command, enter into the root mode
+  sudo su
   ```
 
 - Open the Anaconda Prompt and cd to the target folder, run the following commands:
