@@ -18,6 +18,11 @@ To install this project, do the following:
   ```
 
 - Download [Miniconda](https://docs.conda.io/projects/miniconda/en/latest/miniconda-install.html)/[Anaconda](https://www.anaconda.com/download#downloads)
+  To [install `conda` on Raspberry Pi](https://stackoverflow.com/questions/75720056/installing-miniconda-on-raspberry-pi4), run the following command:
+  ```bash
+  sudo wget http://repo.continuum.io/miniconda/Miniconda3-py39_4.9.2-Linux-aarch64.sh
+  sudo /bin/bash Miniconda3-py39_4.9.2-Linux-aarch64.sh
+  ```
 
 - Open the Anaconda Prompt and cd to the target folder, run the following commands:
 
