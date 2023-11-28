@@ -27,6 +27,25 @@ To install this project, do the following:
   # to run conda command, enter into the root mode
   sudo su
   ```
+  Check out [this post](https://stackoverflow.com/questions/50266716/result-consumed-self-buffer-decodedata-self-errors-final-mistake) if the following error shows up:
+  ```bash
+  Traceback (most recent call last):
+      File "/root/miniconda3/lib/python3.9/site-packages/conda/exceptions.py", line 1079, in __call__
+        return func(*args, **kwargs)
+      File "/root/miniconda3/lib/python3.9/site-packages/conda_env/cli/main.py", line 80, in do_call
+        exit_code = getattr(module, func_name)(args, parser)
+      File "/root/miniconda3/lib/python3.9/site-packages/conda_env/cli/main_create.py", line 87, in execute
+        spec = specs.detect(name=name, filename=filename, directory=os.getcwd())
+      File "/root/miniconda3/lib/python3.9/site-packages/conda_env/specs/__init__.py", line 43, in detect
+        if spec.can_handle():
+      File "/root/miniconda3/lib/python3.9/site-packages/conda_env/specs/yaml_file.py", line 18, in can_handle
+        self._environment = env.from_file(self.filename)
+      File "/root/miniconda3/lib/python3.9/site-packages/conda_env/env.py", line 159, in from_file
+        yamlstr = fp.read()
+      File "/root/miniconda3/lib/python3.9/codecs.py", line 322, in decode
+        (result, consumed) = self._buffer_decode(data, self.errors, final)
+    UnicodeDecodeError: 'utf-8' codec can't decode byte 0xff in position 0: invalid start byte
+  ```
 
 - Open the Anaconda Prompt and cd to the target folder, run the following commands:
 
