@@ -23,6 +23,8 @@ import math
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 import av
 
+import requests
+
 # Build and Load Model ================================================================================================
 def attention_block(inputs, time_steps):
     """
@@ -101,6 +103,29 @@ st.write("## Launch 🚀")
 mp_pose = mp.solutions.pose # Pre-trained pose estimation model from Google Mediapipe
 mp_drawing = mp.solutions.drawing_utils # Supported Mediapipe visualization tools
 pose = mp_pose.Pose(min_detection_confidence=threshold1, min_tracking_confidence=threshold2) # mediapipe pose model
+
+## Send Request -------------------------------------------------------------------------------------------------------
+class RequestSender:
+    def __init__(self):
+        self.domain = 'http://192.168.1.111:8080/'
+        self.action_sent = 'idle or wrong'
+        
+        
+    def get_action(self, action):
+        self.action_sent = action
+        
+
+    def send_request(self):
+        try:
+            postObject = {'user': 'user_1',
+                    'device': 'video',
+                    'value': self.action_sent,
+                    'type': 'action',}
+            # print(postObject)
+            x = requests.post(self.domain + 'send-data', json = postObject)
+            print(x.text)
+        except:
+            print("Request failed")        
 
 ## Real Time Machine Learning and Computer Vision Processes -----------------------------------------------------------
 class VideoProcessor:
@@ -360,6 +385,12 @@ class VideoProcessor:
                 cv2.putText(image, 'curl ' + str(self.curl_counter), (3,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
                 cv2.putText(image, 'press ' + str(self.press_counter), (230,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
                 cv2.putText(image, 'squat ' + str(self.squat_counter), (490,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        
+            # Send the current action
+            sender = RequestSender()
+            sender.get_action(self.current_action)
+            sender.send_request()
+            
         # return cv2.flip(image, 1)
         return image
     

@@ -3,12 +3,6 @@ The exercise pose detection part of the music recommendation project.
 
 ## Installation
 
-This project is using `conda` to manage the virtual environment. The `yml` file is exported using:
-
-```bash
-conda env export > environment.yml
-```
-
 To install this project, do the following:
 
 - Download this repository
@@ -52,6 +46,7 @@ To install this project, do the following:
   ```bash
   conda env create --name music --file environment.yml
   conda activate music
+  pip install -r requirements.txt
   ```
 
 - To run this app, use command line:
