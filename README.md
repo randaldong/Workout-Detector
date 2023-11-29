@@ -3,7 +3,7 @@ The exercise pose detection part of the music recommendation project.
 
 ## Installation
 
-To install this project, do the following:
+**To install this project, do the following:**
 
 - Download this repository
 
@@ -54,6 +54,49 @@ To install this project, do the following:
   ```powershell
   streamlit run app.py
   ```
+
+**SSH into Raspberry Pi**
+
+1. Enable SSH on the Raspberry Pi:
+
+- Boot up your Raspberry Pi and make sure it's connected to your network.
+
+- Open a terminal on the Raspberry Pi or access the terminal through the desktop environment.
+
+- Run the following command to open the Raspberry Pi Configuration Tool:
+
+  ```
+  bashCopy code
+  sudo raspi-config
+  ```
+
+- Navigate to "Interfacing Options" and select "SSH." Enable the SSH service and exit the configuration tool.
+
+2. Find the IP address of your Raspberry Pi:
+
+- On the Raspberry Pi terminal, you can use the following command to find the IP address:
+
+  ```
+  bashCopy code
+  hostname -I
+  ```
+
+- Alternatively, you can check your router's connected devices list to find the IP address assigned to your Raspberry Pi.
+
+3. SSH into the Raspberry Pi from a remote machine:
+
+- Open a terminal on your local machine (not the Raspberry Pi).
+
+- Use the following command to SSH into the Raspberry Pi. Replace `your_pi_ip` with the actual IP address of your Raspberry Pi:
+
+  ```
+  bashCopy code
+  ssh username@your_pi_ip
+  ```
+
+  If this is your first time connecting, you may be asked to confirm the connection by typing "yes."
+
+- Enter the default password for the Raspberry Pi, which is usually `raspberry`. You will be prompted to change the password on the first login.
 
 ## Pose Detection
 
