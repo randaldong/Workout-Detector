@@ -3,6 +3,8 @@ The exercise pose detection part of the music recommendation project.
 
 ## Installation
 
+### Install the project
+
 **To install this project, do the following:**
 
 - Download this repository
@@ -55,7 +57,49 @@ The exercise pose detection part of the music recommendation project.
   streamlit run app.py
   ```
 
-**SSH into Raspberry Pi**
+
+
+### Docker image
+
+This `Streamlit` app is also deployed using `Docker`. Check [this tutorial](https://docs.streamlit.io/knowledge-base/tutorials/deploy/docker) for how. 
+
+Basically, just follow these steps:
+
+- Create Docker assets (`Dockerfile`
+
+- Build a Docker image
+
+  ```bash
+  # docker build -t IMAGE_NAME .
+  docker build -t workout-detector .
+  ```
+
+- Run the Docker container
+
+  ```bash
+  # docker run -p 8501:8501 IMAGE_NAME
+  docker run -p 8501:8501 workout-detector
+  ```
+
+- Publish the image
+
+  ```bash
+  # Rename the image
+  docker tag workout-detector ranmeraklis/workout-detector
+  
+  # then, "Push to Hub" in GUI
+  ```
+
+- To stop the container
+
+  ```bash
+  # docker stop IMAGE_NAME
+  docker stop workout-detector
+  ```
+
+  
+
+### **SSH into Raspberry Pi**
 
 1. Enable SSH on the Raspberry Pi:
 
