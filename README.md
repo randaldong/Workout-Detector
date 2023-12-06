@@ -149,9 +149,24 @@ Basically, just follow these steps:
 - Squat
 - Idle or wrong
 
-
 Fig. Pose Landmarks from Google [MediaPipe](https://github.com/google/mediapipe/tree/master)
 ![](https://camo.githubusercontent.com/7fbec98ddbc1dc4186852d1c29487efd7b1eb820c8b6ef34e113fcde40746be2/68747470733a2f2f6d65646961706970652e6465762f696d616765732f6d6f62696c652f706f73655f747261636b696e675f66756c6c5f626f64795f6c616e646d61726b732e706e67)
+
+Problem: Each time when a valid new pose is detected, it will send the current valid new pose to the server. However, the detection happens each frame, so `self.current_action` can change very frequently, leading to fast switches between "idle or wrong" and other correct poses.
+
+Solution: introduce "freeze time" -- each time when a correct movement is detected, there will be a freeze time for this specific pose (curl, press, or squat). Freeze Time allows users to stay in the state for the current valid pose, even if they are doing it wrong or not doing anything within this short period of time, adding the robustness of the system.
+
+The whole logic will be like:
+
+```python
+# Send the current action
+#   1. if it's the first frame and nothing has been sent: send
+#   2. if it's different from the previous action
+#      2.1 if precious action is "idle or wrong": send
+#      2.2 if precious action is a valid pose: delayed send
+```
+
+
 
 
 ## Features

@@ -25,6 +25,8 @@ import av
 
 import requests
 
+import time
+
 # Build and Load Model ================================================================================================
 def attention_block(inputs, time_steps):
     """
@@ -90,14 +92,17 @@ model = build_model(HIDDEN_UNITS)
 
 # App =================================================================================================================
 ## UI -----------------------------------------------------------------------------------------------------------------
-st.write("# Exercise Detector 🏋️‍♂️🕵️")
+st.markdown("<h1 style='text-align: center;'>🏋️‍♂️ Exercise Detector 🕵️</h1>", unsafe_allow_html=True)
 
-st.write("## Settings⚙️")
-threshold1 = st.slider("Minimum Keypoint Detection Confidence", 0.00, 1.00, 0.80)
-threshold2 = st.slider("Minimum Tracking Confidence", 0.00, 1.00, 0.80)
-threshold3 = st.slider("Minimum Activity Classification Confidence", 0.00, 1.00, 0.80)
+st.write("## ⚙️Settings")
+threshold1 = st.slider("**1. Minimum Keypoint Detection Confidence**", 0.00, 1.00, 0.80)
+threshold2 = st.slider("**2. Minimum Tracking Confidence**", 0.00, 1.00, 0.80)
+threshold3 = st.slider("**3. Minimum Activity Classification Confidence**", 0.00, 1.00, 0.80)
+cool_down_time = st.slider("**4. Cool Down Time**", 3.00, 10.00, 5.00)
+st.write("> P.S. 🧊*Cool Down Time*🧊 means if you fail to finish a correct movement within \
+    this short period of time, your current state will switch to idle or wrong.")
 
-st.write("## Launch 🚀")
+st.write("## 🚀Launch")
 
 ## Mediapipe ----------------------------------------------------------------------------------------------------------
 mp_pose = mp.solutions.pose # Pre-trained pose estimation model from Google Mediapipe
@@ -107,25 +112,43 @@ pose = mp_pose.Pose(min_detection_confidence=threshold1, min_tracking_confidence
 ## Send Request -------------------------------------------------------------------------------------------------------
 class RequestSender:
     def __init__(self):
-        self.domain = 'http://192.168.1.111:8080/'
-        self.action_sent = 'idle or wrong'
-        
-        
-    def get_action(self, action):
-        self.action_sent = action
-        
-
-    def send_request(self):
+        self.domain = 'https://wombat-meet-antelope.ngrok-free.app/'
+        self.notify_domain = 'https://ab4b-128-54-47-14.ngrok-free.app/'
+        self.action_sent = ''
+        self.count_sent = 0
+        self.can_send_count = False
+            
+    
+    def send_activity_request(self):
         try:
             postObject = {'user': 'user_1',
                     'device': 'video',
                     'value': self.action_sent,
-                    'type': 'action',}
-            # print(postObject)
-            x = requests.post(self.domain + 'send-data', json = postObject)
-            print(x.text)
+                    'type': 'activity',}
+            print(postObject)
+            t = time.localtime()
+            current_time = time.strftime("%H:%M:%S", t)
+            print(current_time)
+            #x = requests.post(self.domain + 'send-data', json = postObject)
+            # print(x.text)
         except:
-            print("Request failed")        
+            print("Activity Request Failed!")        
+            
+    def send_count_request(self):
+        try:
+            postObject = {'activity': self.action_sent,
+                        'reps': self.count_sent,}
+            print(postObject)
+            t = time.localtime()
+            current_time = time.strftime("%H:%M:%S", t)
+            print(current_time)
+            #x = requests.post(self.notify_domain + 'notify', json = postObject)
+            # print(x.text)
+        except:
+            print("Count Request Failed!") 
+        
+# Instantiate a request sender
+sender = RequestSender()
 
 ## Real Time Machine Learning and Computer Vision Processes -----------------------------------------------------------
 class VideoProcessor:
@@ -138,7 +161,9 @@ class VideoProcessor:
         
         # Detection variables
         self.sequence = []
-        self.current_action = ''
+        self.previous_action = 'idle or wrong'
+        self.current_action = 'idle or wrong'
+        self.detected_action = ''
 
         # Rep counter logic variables
         self.curl_counter = 0
@@ -147,6 +172,7 @@ class VideoProcessor:
         self.curl_stage = None
         self.press_stage = None
         self.squat_stage = None
+        self.cool_down_start = 0
     
     
     def draw_landmarks(self, image, results):
@@ -224,7 +250,7 @@ class VideoProcessor:
         
         """
         
-        if self.current_action == 'curl':
+        if self.detected_action == 'curl':
             # Get coords
             shoulder = self.get_coordinates(landmarks, mp_pose, 'left', 'shoulder')
             elbow = self.get_coordinates(landmarks, mp_pose, 'left', 'elbow')
@@ -239,13 +265,18 @@ class VideoProcessor:
             if angle > 140 and self.curl_stage =='up':
                 self.curl_stage="down"  
                 self.curl_counter +=1
+                self.current_action = 'curl'
+                self.cool_down_start = time.time()
+                if (self.curl_counter != 0 and self.curl_counter % 10 == 0):
+                    sender.count_sent = self.curl_counter
+                    sender.can_send_count = True
             self.press_stage = None
             self.squat_stage = None
                 
             # Viz joint angle
             self.viz_joint_angle(image, angle, elbow)
             
-        elif self.current_action == 'press':           
+        elif self.detected_action == 'press':           
             # Get coords
             shoulder = self.get_coordinates(landmarks, mp_pose, 'left', 'shoulder')
             elbow = self.get_coordinates(landmarks, mp_pose, 'left', 'elbow')
@@ -264,13 +295,18 @@ class VideoProcessor:
             if (elbow_angle < 50) and (shoulder2elbow_dist > shoulder2wrist_dist) and (self.press_stage =='up'):
                 self.press_stage='down'
                 self.press_counter += 1
+                self.current_action = 'press'
+                self.cool_down_start = time.time()
+                if (self.press_counter != 0 and self.press_counter % 10 == 0):
+                    sender.count_sent = self.press_counter
+                    sender.can_send_count = True
             self.curl_stage = None
             self.squat_stage = None
                 
             # Viz joint angle
             self.viz_joint_angle(image, elbow_angle, elbow)
             
-        elif self.current_action == 'squat':
+        elif self.detected_action == 'squat':
             # Get coords
             # left side
             left_shoulder = self.get_coordinates(landmarks, mp_pose, 'left', 'shoulder')
@@ -298,6 +334,11 @@ class VideoProcessor:
             if (left_knee_angle > thr) and (right_knee_angle > thr) and (left_hip_angle > thr) and (right_hip_angle > thr) and (self.squat_stage =='down'):
                 self.squat_stage='up'
                 self.squat_counter += 1
+                self.current_action = 'squat'
+                self.cool_down_start = time.time()
+                if (self.squat_counter != 0 and self.squat_counter % 10 == 0):
+                    sender.count_sent = self.squat_counter
+                    sender.can_send_count = True
             self.curl_stage = None
             self.press_stage = None
                 
@@ -306,7 +347,12 @@ class VideoProcessor:
             self.viz_joint_angle(image, left_hip_angle, left_hip)
             
         else:
-            pass
+            if round(time.time() - self.cool_down_start > cool_down_time):
+                self.current_action = 'idle or wrong'
+                sender.count_sent = 0
+                sender.can_send_count = False
+            else:    
+                pass
         return
     
     
@@ -359,12 +405,12 @@ class VideoProcessor:
         if len(self.sequence) == self.sequence_length:
             res = model.predict(np.expand_dims(self.sequence, axis=0), verbose=0)[0]
             
-            self.current_action = self.actions[np.argmax(res)]
+            self.detected_action = self.actions[np.argmax(res)]
             confidence = np.max(res)
             
             # Erase current action variable if no probability is above threshold
             if confidence < self.threshold:
-                self.current_action = ''
+                self.detected_action = 'idle or wrong'
 
             # Viz probabilities
             image = self.prob_viz(res, image)
@@ -372,8 +418,7 @@ class VideoProcessor:
             # Count reps
             try:
                 landmarks = results.pose_landmarks.landmark
-                self.count_reps(
-                    image, landmarks, mp_pose)
+                self.count_reps(image, landmarks, mp_pose)
             except:
                 pass
 
@@ -386,10 +431,27 @@ class VideoProcessor:
                 cv2.putText(image, 'press ' + str(self.press_counter), (230,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
                 cv2.putText(image, 'squat ' + str(self.squat_counter), (490,30), cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         
-            # Send the current action
-            sender = RequestSender()
-            sender.get_action(self.current_action)
-            sender.send_request()
+            # Send requests
+            ##  activity request
+            ##  1. if it's the first frame and nothing has been sent: send
+            ##  2. if it's different from the previous action
+            ##     2.1 if precious action is "idle or wrong": send
+            ##     2.2 if precious action is a valid pose: delayed send
+            if sender.action_sent == '' or self.current_action != self.previous_action:
+                if sender.action_sent == '':
+                    sender.action_sent = 'idle or wrong'
+                else:
+                    sender.action_sent = self.current_action
+                sender.send_activity_request()
+                
+            ## count request
+            if sender.count_sent != 0 and sender.can_send_count == True:
+                sender.send_count_request()
+                sender.can_send_count = False
+
+
+            # Update previous action
+            self.previous_action = self.current_action
             
         # return cv2.flip(image, 1)
         return image
